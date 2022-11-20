@@ -20,7 +20,8 @@ In this project we make an NLP based hungarian NER model using deep neural netwo
 # Project files 📃
 The data directory holds all the data for training and validation. The model will use the .csv files, but we kept the original .conllup files just in case. 
 
-`data_visualization.ipynb` contains the downloading and preparation of the training data.
+- `data_visualization.ipynb` contains the downloading and preparation of the training data.
+- `basic_training.ipynb` contains the basic training and evaluation code
 
 # Running the project 🏃‍♂️
 You can simply run the project connected to each milestone by clicking on the corresponding badge on the top of this README file or if it suits you better you can open the .ipybn files here on github and click the badge there. 
