@@ -1,7 +1,7 @@
 |Milestone|Colab badge|
 | ----------- | ----------- |
-| Milestone 1      | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Henya14/deep-learning-ner/blob/main/data_visualization.ipynb) |
-| Milestone 2        | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Henya14/deep-learning-ner/blob/main/basic_training.ipynb) |
+| Milestone 1 (data preparation)     | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Henya14/deep-learning-ner/blob/main/data_visualization.ipynb) |
+| Milestone 2  (basic training and evaluation)      | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Henya14/deep-learning-ner/blob/main/basic_training.ipynb) |
 
 
 # Group info ℹ
