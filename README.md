@@ -1,4 +1,9 @@
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Henya14/deep-learning-ner/blob/main/data_visualization.ipynb)
+|Milestone|Colab badge|
+| ----------- | ----------- |
+| Milestone 1      | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Henya14/deep-learning-ner/blob/main/data_visualization.ipynb) |
+| Milestone 2        | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Henya14/deep-learning-ner/blob/main/basic_training.ipynb) |
+
+
 # Group info ℹ
 
 ## Name: NER 💸
@@ -18,9 +23,9 @@ The data directory holds all the data for training and validation. The model wil
 `data_visualization.ipynb` contains the downloading and preparation of the training data.
 
 # Running the project 🏃‍♂️
-You can simply run the project by clicking on the badge on the top of this README file or if it suits you better you can open the `data_visualization.ipynb` file and click the badge there. 
+You can simply run the project connected to each milestone by clicking on the corresponding badge on the top of this README file or if it suits you better you can open the .ipybn files here on github and click the badge there. 
 
-Of course you are also welcome to clone the repo and run it locally with jupyter notebook.
+Of course you are also welcome to clone the repo and run the ipynb files locally with jupyter notebook.
 
 # Data 📊
 The data is from the [NYTK-NerKor](https://github.com/nytud/NYTK-NerKor) github repo. 
