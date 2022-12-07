@@ -51,7 +51,7 @@ def get_sentences(df: pd.DataFrame):
 
 
 
-def align_labels_of_tokenized_sentence(sentence, labels, should_tokenize_sub_words = False):
+def align_labels_of_tokenized_sentence(sentence, labels, labels_to_ids, should_tokenize_sub_words = False):
     SPECIAL_TOKEN_ID = -100
     label_ids = []
     previous_word_id = None
@@ -66,10 +66,10 @@ def align_labels_of_tokenized_sentence(sentence, labels, should_tokenize_sub_wor
     return label_ids
 
 class NERDataset(torch.utils.data.Dataset):
-    def __init__(self, data_df):
+    def __init__(self, data_df, lables_to_ids):
         sentences = get_sentences(data_df)
         self.tokenized_sentences = [tokenizer(sentence["FORM"], padding='max_length', max_length=512, truncation=True, return_tensors="pt", is_split_into_words=True) for sentence in sentences]
-        self.labels = [align_labels_of_tokenized_sentence(tokenized_sentences.word_ids(), sentence["TAG"]) for tokenized_sentences, sentence in zip(self.tokenized_sentences, sentences)]
+        self.labels = [align_labels_of_tokenized_sentence(tokenized_sentences.word_ids(), sentence["TAG"], lables_to_ids) for tokenized_sentences, sentence in zip(self.tokenized_sentences, sentences)]
 
         
     def __len__(self):
@@ -147,8 +147,8 @@ class NERModel(torch.nn.Module):
 
 
 #Training code made with help from: https://towardsdatascience.com/custom-named-entity-recognition-with-bert-cf1fd4510804
-def train_loop(model, train_df, devel_df, test_df, writer):
-    train_dataset, devel_dataset, test_dataset = NERDataset(train_df), NERDataset(devel_df), NERDataset(test_df)
+def train_loop(model, train_df, devel_df, test_df, writer, labels_to_ids):
+    train_dataset, devel_dataset, test_dataset = NERDataset(train_df, labels_to_ids), NERDataset(devel_df, labels_to_ids), NERDataset(test_df, labels_to_ids)
     batch_size = 16
     epoch_num = 10
     learning_rate = 0.0001
@@ -164,36 +164,29 @@ def train_loop(model, train_df, devel_df, test_df, writer):
    
     for epoch in range(epoch_num):
         model.train()
-
-        total_matches_train = 0
-        total_tokens_train = 0
         for tokenized_sentence, labels in tqdm(train_dataloader):
             train_labels: torch.Tensor = labels.to(device)
             attention_mask = tokenized_sentence['attention_mask'].squeeze(1).to(device)
             input_ids = tokenized_sentence['input_ids'].squeeze(1).to(device)
 
             optimizer.zero_grad()
-            loss, logits = model(input_ids, attention_mask, train_labels)
+            loss, _ = model(input_ids, attention_mask, train_labels)
 
             
             
             loss.backward()
             optimizer.step()
-            with torch.no_grad():
-              matches_train, tokens_train = get_matching_label_count(logits, train_labels)
-              total_matches_train += matches_train
-              total_tokens_train += tokens_train
         
         model.eval()
+        train_accuracy, total_matches_train = get_accuracy_on_dataset(model, train_dataloader, device)
         devel_accuracy, total_matches_devel = get_accuracy_on_dataset(model, devel_dataloader, device)
-        train_accuracy = total_matches_train/total_tokens_train
         print(f"Epoch: {epoch+1} Train Accuracy: {train_accuracy * 100:.2f}% Devel Accuracy: {devel_accuracy*100:.2f}%")
         print(f"Train matches: Got {total_matches_train} matches out of {len(train_df)}")
         print(f"Devel matches: Got {total_matches_devel} matches out of {len(devel_df)}")
 
         writer.add_scalar("Accuracy/train", train_accuracy, epoch)
         writer.add_scalar("Accuracy/devel", devel_accuracy, epoch)
-        save_model(model, f"epoch_{epoch}_val_acc_{devel_accuracy:.2f}_train_acc_{train_accuracy:.2f}")
+        save_model(model, f"epoch_{epoch}_val_acc_{devel_accuracy:.2f}_train_acc_{train_accuracy:.2f}.pt")
 
 def get_accuracy_on_dataset(model: NERModel, dataset_loader: DataLoader, device):
   model.eval()
@@ -232,22 +225,26 @@ def load_model(model: NERModel, file_name: str) -> NERModel:
     return model
 
 
-dfs = get_dfs()
-labels=get_labels(dfs)
-ids_to_labels = {k: v for k, v in enumerate(sorted(labels)) }
-labels_to_ids = {v: k for k, v in enumerate(sorted(labels)) }
-LABEL_COUNT = len(labels)
-
 MODEL_SAVE_DIR = "models"
-if(not os.path.exists(MODEL_SAVE_DIR)):
-  os.mkdir(MODEL_SAVE_DIR)
-def main(writer): 
+
+
+
+def main(writer, labels_to_ids): 
   dfs = get_dfs()
   labels=get_labels(dfs)
 
   model = NERModel(LABEL_COUNT)
-  train_loop(model=model, train_df=dfs["train"], devel_df=dfs["devel"], test_df=dfs["test"], writer=writer)
+  train_loop(model=model, train_df=dfs["train"], devel_df=dfs["devel"], test_df=dfs["test"], writer=writer, labels_to_ids=labels_to_ids)
 
 if __name__ == '__main__':
+    dfs = get_dfs()
+    labels=get_labels(dfs)
+    ids_to_labels = {k: v for k, v in enumerate(sorted(labels)) }
+    labels_to_ids = {v: k for k, v in enumerate(sorted(labels)) }
+    LABEL_COUNT = len(labels)
+
+    if(not os.path.exists(MODEL_SAVE_DIR)):
+        os.mkdir(MODEL_SAVE_DIR)
+
     with SummaryWriter() as writer:
-        main(writer)
+        main(writer,labels_to_ids)
