@@ -24,28 +24,42 @@ def load_all_csv_files_in_dir(path_to_dir, train_test_devel, genre, save_interme
     data_file_paths = [os.path.join(path_to_dir, cf) for cf in get_csv_files_in_dir(path_to_dir)]
     combined_df = pd.DataFrame()
     for csv_file in data_file_paths:
-        print(csv_file)
         df = pd.read_csv(csv_file)
         if "sentence_index" in combined_df:
             df["sentence_index"] = df["sentence_index"] + (combined_df["sentence_index"].max() + 1)
-            print(combined_df["sentence_index"].max())
-            print(combined_df["sentence_index"].max() + 1)
         combined_df = pd.concat([combined_df, df])
     return combined_df
 
 
 
+def get_sentences2(df: pd.DataFrame):
+    copy_df = df.copy()
+    copy_df = copy_df.sort_values(["sentence_index", "position_number_in_sentence"])
+    sentences = pd.DataFrame(columns=["FORM", "TAG"] )
+    print(f"There are {len(copy_df['sentence_index'].unique())} sentences in the dataset")
+    for i in tqdm(range(copy_df["sentence_index"].max())):
+        form_tag_pairs = copy_df[copy_df["sentence_index"]==i][["sentence_index", "position_number_in_sentence", "FORM", "CONLL:NER"]]
 
-
+        if (len(form_tag_pairs) > 0):
+            row = {
+                    "FORM": form_tag_pairs["FORM"].tolist(),
+                    "TAG": form_tag_pairs["CONLL:NER"].tolist(),
+                }
+            row = pd.Series(row)
+            sentences.loc[len(sentences)] = row
+            #sentences.append({"FORM": form_tag_pairs["FORM"].tolist(),"TAG": form_tag_pairs["CONLL:NER"].tolist()})
+        
+    return sentences
 
 def get_sentences(df: pd.DataFrame):
     copy_df = df.copy()
     copy_df = copy_df.sort_values(["sentence_index", "position_number_in_sentence"])
     sentences = []
-    print(copy_df["sentence_index"].max())
+    print(f'Max sentence index: {copy_df["sentence_index"].max()}')
     for i in range(copy_df["sentence_index"].max()):
         form_tag_pairs = copy_df[copy_df["sentence_index"]==i][["position_number_in_sentence", "FORM", "CONLL:NER"]]
-        sentences.append({"FORM": form_tag_pairs["FORM"].tolist(),"TAG": form_tag_pairs["CONLL:NER"].tolist()})
+        if (len(form_tag_pairs) > 0):
+            sentences.append({"FORM": form_tag_pairs["FORM"].tolist(),"TAG": form_tag_pairs["CONLL:NER"].tolist()})
         
     return sentences
 
@@ -66,10 +80,10 @@ def align_labels_of_tokenized_sentence(sentence, labels, labels_to_ids, should_t
     return label_ids
 
 class NERDataset(torch.utils.data.Dataset):
-    def __init__(self, data_df, lables_to_ids):
+    def __init__(self, data_df, labels_to_ids):
         sentences = get_sentences(data_df)
         self.tokenized_sentences = [tokenizer(sentence["FORM"], padding='max_length', max_length=512, truncation=True, return_tensors="pt", is_split_into_words=True) for sentence in sentences]
-        self.labels = [align_labels_of_tokenized_sentence(tokenized_sentences.word_ids(), sentence["TAG"], lables_to_ids) for tokenized_sentences, sentence in zip(self.tokenized_sentences, sentences)]
+        self.labels = [align_labels_of_tokenized_sentence(tokenized_sentences.word_ids(), sentence["TAG"], labels_to_ids) for tokenized_sentences, sentence in zip(self.tokenized_sentences, sentences)]
 
         
     def __len__(self):
@@ -79,6 +93,32 @@ class NERDataset(torch.utils.data.Dataset):
             return self.tokenized_sentences[index],  torch.LongTensor(self.labels[index])
 
 
+class NERDatasetFromSentenceDF(torch.utils.data.Dataset):
+    def __init__(self, sentences_df: pd.DataFrame, labels_to_ids, original_df_size, augmention_factor):
+        
+        self.original_df_size = original_df_size
+        self.augmention_factor = augmention_factor
+        print("aug_size", (len(sentences_df) - original_df_size) / augmention_factor)
+        self.augmented_size = int((len(sentences_df) - original_df_size) / augmention_factor)
+        self.augmented_df = sentences_df
+        self.sentences = sentences_df[0:original_df_size+self.augmented_size].copy()
+        self.tokenized_sentences = [tokenizer(eval(sentence["FORM"]), padding='max_length', max_length=512, truncation=True, return_tensors="pt", is_split_into_words=True) for _, sentence in self.sentences.iterrows()]
+        self.labels = [align_labels_of_tokenized_sentence(tokenized_sentences.word_ids(), eval(sentence["TAG"]), labels_to_ids) for tokenized_sentences, (_, sentence) in zip(self.tokenized_sentences, self.sentences.iterrows())]
+        self.labels_to_ids = labels_to_ids
+
+        
+    def __len__(self):
+        return len(self.augmented_df)
+    
+    def __getitem__(self, index):
+            if (index < self.original_df_size):
+                return self.tokenized_sentences[index], torch.LongTensor(self.labels[index])
+            else:
+                new_index = self.original_df_size + ((index - self.original_df_size) % self.augmented_size)
+                
+                return self.tokenized_sentences[new_index], torch.LongTensor(self.labels[new_index])
+               
+
 
 
 tokenizer = AutoTokenizer.from_pretrained("SZTAKI-HLT/hubert-base-cc")
@@ -86,6 +126,8 @@ tokenizer = AutoTokenizer.from_pretrained("SZTAKI-HLT/hubert-base-cc")
 train_test_devel_data_path = os.path.join("data", "train-devel-test")
 train_test_devel_data_dirs = [os.path.join(train_test_devel_data_path, data_dir) for data_dir in os.listdir(train_test_devel_data_path) if os.path.isdir(os.path.join(train_test_devel_data_path, data_dir))]
 csv_file_pattern = re.compile(".*_full.csv") 
+
+
 def get_dfs():
     dfs = {}
     train_devel_test_dirs = get_train_devel_test_dirs()
@@ -96,6 +138,8 @@ def get_dfs():
             print(genre_dir)
             genre = genre_dir.split(os.path.sep)[-2]
             df = load_all_csv_files_in_dir(genre_dir, data_set, genre, True)
+            if "sentence_index" in dfs[data_set]:
+                df["sentence_index"] = df["sentence_index"] + (dfs[data_set]["sentence_index"].max() + 1)
             dfs[data_set] = pd.concat([dfs[data_set], df], ignore_index=True)
     return dfs
 
@@ -148,8 +192,12 @@ class NERModel(torch.nn.Module):
 
 #Training code made with help from: https://towardsdatascience.com/custom-named-entity-recognition-with-bert-cf1fd4510804
 def train_loop(model, train_df, devel_df, test_df, writer, labels_to_ids):
-    train_dataset, devel_dataset, test_dataset = NERDataset(train_df, labels_to_ids), NERDataset(devel_df, labels_to_ids), NERDataset(test_df, labels_to_ids)
-    batch_size = 16
+    original_train_size = len(train_df)
+    train_augmentation_factor = 10
+    train_df = get_augmented_train_df(train_augmentation_factor)    
+    train_dataset, devel_dataset, test_dataset = NERDatasetFromSentenceDF(train_df, labels_to_ids, original_train_size, train_augmentation_factor), NERDataset(devel_df, labels_to_ids), NERDataset(test_df, labels_to_ids)
+
+    batch_size = 64
     epoch_num = 10
     learning_rate = 0.0001
     train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
@@ -229,10 +277,16 @@ MODEL_SAVE_DIR = "models"
 
 
 
+def get_augmented_train_df(add_no_o_tag_sentences_num_times = 1): 
+  train_df =  pd.read_csv(os.path.join(train_test_devel_data_path, "train", "original_sentences.csv"))
+  train_sentences_removed_o_tag_df =  pd.read_csv(os.path.join(train_test_devel_data_path, "train", "removed_o_tag_sentences.csv"))
+  for i in range(add_no_o_tag_sentences_num_times):
+      train_df = pd.concat([train_df, train_sentences_removed_o_tag_df], ignore_index=True)
+  return train_df
+
 def main(writer, labels_to_ids): 
   dfs = get_dfs()
-  labels=get_labels(dfs)
-
+  dfs["train"] = pd.read_csv(os.path.join(train_test_devel_data_path, "train", "original_sentences.csv"))
   model = NERModel(LABEL_COUNT)
   train_loop(model=model, train_df=dfs["train"], devel_df=dfs["devel"], test_df=dfs["test"], writer=writer, labels_to_ids=labels_to_ids)
 
