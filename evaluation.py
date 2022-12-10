@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sys
 
+# Constant for the batch size the model uses
 BATCH_SIZE = 64
 
 # returns the predicted labels from the model and the actual labels 
@@ -44,11 +45,11 @@ def get_predicted_and_actual_labels(dataset: NERDataset, model: NERModel):
 
 
 
-
+# Returns the sklearn classification report 
 def get_classification_report(actual_labels, predicted_labels, labels):
     return classification_report(actual_labels.tolist(), predicted_labels.tolist(), target_names=sorted(labels))
 
-    
+# Plots a confusion matrix
 def plot_confusion_matrix(cm, labels, dataset):
     fig, ax = plt.subplots()
     matrix = ax.matshow(cm, interpolation="nearest", cmap="coolwarm")
@@ -66,6 +67,7 @@ def plot_confusion_matrix(cm, labels, dataset):
     fig.set_size_inches(20, 10)
     plt.show()
 
+# This evaluates a model (prints classification report and plots confusion matrix) that it gets from the command line arguments on the given dataset or on "test" if none was provided
 if __name__ == "__main__":
 
     print("args", sys.argv)
