@@ -12,7 +12,7 @@
 | ----------- | ----------- |
 | Élő Henrik Rudolf      | HR2JO3 |
 | Zahorán Marcell        | E5ZY9R |
-| Császár Kristóf        | DPCIMG |
+| ~~Császár Kristóf~~       | ~~DPCIMG~~ (Left the group)  |
 
 # About the project 📚
 In this project we make an NLP based hungarian NER model using deep neural networks.
@@ -33,7 +33,7 @@ The data directory holds all the data for training and validation. The model wil
 
 # Running the project 🏃‍♂️
 ## Intalling the enviroment
-You can install the python environment for this project by running the `pip install -r requirements.txt` in the project's root directory
+You can install the python environment for this project by running the `pip3 --no-cache-dir install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cu116` in the project's root directory
 ## Running the jupyter notebooks
 You can simply run the project connected to each milestone by clicking on the corresponding badge on the top of this README file or if it suits you better you can open the .ipybn files here on github and click the badge there. 
 
