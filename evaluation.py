@@ -10,17 +10,18 @@ import sys
 
 BATCH_SIZE = 64
 
+# returns the predicted labels from the model and the actual labels 
 def get_predicted_and_actual_labels(dataset: NERDataset, model: NERModel):
     dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=False)
 
-    device  = "cuda" if torch.cuda.is_available() else "cpu"
+    device  = "cuda" if torch.cuda.is_available() else "cpu" # use GPU if available
 
-    model.to(device)
-    model.eval()
+    model.to(device) # move model to CPU or GPU
+    model.eval() 
     predicted_labels = torch.tensor([])
     actual_labels = torch.tensor([])
 
-    for tokenized_sentence, labels in tqdm(dataloader):
+    for tokenized_sentence, labels in tqdm(dataloader): # iterate over the dataset
         label_batch: torch.Tensor = labels.to(device)
         attention_mask = tokenized_sentence['attention_mask'].squeeze(1).to(device)
         input_ids = tokenized_sentence['input_ids'].squeeze(1).to(device)
