@@ -6,8 +6,9 @@ from torch.utils.data.dataloader import DataLoader
 import torch
 import matplotlib.pyplot as plt
 import numpy as np
+import sys
 
-BATCH_SIZE = 16
+BATCH_SIZE = 64
 
 def get_predicted_and_actual_labels(dataset: NERDataset, model: NERModel):
     dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=False)
@@ -39,15 +40,6 @@ def get_predicted_and_actual_labels(dataset: NERDataset, model: NERModel):
     return predicted_labels, actual_labels
 
 
-dfs = get_dfs()
-labels=get_labels(dfs)
-model = NERModel(len(labels))
-model = load_model(model, "epoch_1_val_acc_0.94_train_acc_0.92.pt")
-print(len(labels))
-model.bert.requires_grad_(False)
-labels_to_ids = {v: k for k, v in enumerate(sorted(labels)) }
-dataset = NERDataset(dfs["devel"], lables_to_ids=labels_to_ids)
-predicted_labels, actual_labels = get_predicted_and_actual_labels(dataset, model)
 
 
 
@@ -56,7 +48,7 @@ def get_classification_report(actual_labels, predicted_labels, labels):
     return classification_report(actual_labels.tolist(), predicted_labels.tolist(), target_names=sorted(labels))
 
     
-def plot_confusion_matrix(cm, labels):
+def plot_confusion_matrix(cm, labels, dataset):
     fig, ax = plt.subplots()
     matrix = ax.matshow(cm, interpolation="nearest", cmap="coolwarm")
 
@@ -67,11 +59,39 @@ def plot_confusion_matrix(cm, labels):
     ax.xaxis.set_ticklabels(sorted(labels))
     ax.set_yticks([i for i in range(len(labels))])
     ax.yaxis.set_ticklabels(sorted(labels))
+    plt.title(f"Confusion matrix on the '{dataset}' dataset")
     plt.ylabel("Actual")
     plt.xlabel("Predicted")
     fig.set_size_inches(20, 10)
     plt.show()
 
-print(get_classification_report(actual_labels, predicted_labels, labels))
-cm = confusion_matrix(actual_labels.tolist(), predicted_labels.tolist())
-plot_confusion_matrix(cm, labels)
+if __name__ == "__main__":
+
+    print("args", sys.argv)
+    args = sys.argv
+    print(args)
+    
+    model_name = "second_training_val_acc_0.95_train_acc_0.88.pt"
+    eval_dataset = "test"
+    if len(args) == 2:
+        model_name = args[1]
+    else: 
+        model_name = args[1]
+        eval_dataset = args[2]
+
+    if eval_dataset not in ["train", "devel", "test"]:
+        print(f"Dataset must be 'train', 'devel' or 'test', but it was '{eval_dataset}'")
+        exit(1)
+
+    dfs = get_dfs()
+    labels=get_labels(dfs)
+    model = NERModel(len(labels))
+    model = load_model(model, model_name)
+    model.bert.requires_grad_(False)
+    labels_to_ids = {v: k for k, v in enumerate(sorted(labels)) }
+    dataset = NERDataset(dfs[eval_dataset], labels_to_ids=labels_to_ids)
+    predicted_labels, actual_labels = get_predicted_and_actual_labels(dataset, model)
+    print(f"Classification report on '{eval_dataset}' dataset")
+    print(get_classification_report(actual_labels, predicted_labels, labels))
+    cm = confusion_matrix(actual_labels.tolist(), predicted_labels.tolist())
+    plot_confusion_matrix(cm, labels, eval_dataset)
