@@ -70,10 +70,12 @@ if __name__ == "__main__":
     print("args", sys.argv)
     args = sys.argv
     print(args)
-    
-    model_name = "second_training_val_acc_0.95_train_acc_0.88.pt"
+
     eval_dataset = "test"
-    if len(args) == 2:
+    if len(args) < 2:
+        print("Please specify the saved model's file name in the arguments. Like: 'python evaluation.py model_name.pt'")
+        exit(1)
+    elif len(args) == 2:
         model_name = args[1]
     else: 
         model_name = args[1]

@@ -21,12 +21,30 @@ In this project we make an NLP based hungarian NER model using deep neural netwo
 The data directory holds all the data for training and validation. The model will use the .csv files, but we kept the original .conllup files just in case. 
 
 - `data_visualization.ipynb` contains the downloading and preparation of the training data.
-- `basic_training.ipynb` contains the basic training and evaluation code
+- `basic_training.ipynb` contains the basic training and basic evaluation code
+
+- `data_augmentation.ipynb` contains the code of the data augmentation
+
+- The `docs` directory contains our documentation in `.pdf` and `.docx` format 
+
+- `evaulation.py` is the script for evaluating a model on the datasets
+
+- `training.py` is the script for the model training.
 
 # Running the project 🏃‍♂️
 You can simply run the project connected to each milestone by clicking on the corresponding badge on the top of this README file or if it suits you better you can open the .ipybn files here on github and click the badge there. 
 
 Of course you are also welcome to clone the repo and run the ipynb files locally with jupyter notebook.
+
+## Training
+You can train our model by running the `python training.py` command.
+This script will save the trained model each epoch. 
+
+## Evaluation
+You can evaulate the model by using the `python evaluation.py <model_name>[<evaluation_dataset>]` command where `model_name` is the name of the PyTorch `.pt` model file in the `models` directory and `evaluation_dataset` is the dataset on which you want to evaulate the model, possible values are: `train` for the training dataset, `devel` for the validation dataset and `test` for the test dataset. The default value for `evaluation_dataset` is `test`.
+Example:
+You want to evaluate the `first_model.pt` on the `test` dataset: `python evaluation.py first_model.pt test`
+
 
 # Data 📊
 The data is from the [NYTK-NerKor](https://github.com/nytud/NYTK-NerKor) github repo. 
@@ -44,3 +62,6 @@ Some info from the data's repo:
 > Web texts contain a selection from the Hungarian [Webcorpus 2.0](https://hlt.bme.hu/en/resources/webcorpus2).
 
 > Wikipedia texts are from the Hungarian Wikipedia. :)
+
+
+

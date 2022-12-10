@@ -31,31 +31,10 @@ def load_all_csv_files_in_dir(path_to_dir, train_test_devel, genre, save_interme
     return combined_df
 
 
-
-def get_sentences2(df: pd.DataFrame):
-    copy_df = df.copy()
-    copy_df = copy_df.sort_values(["sentence_index", "position_number_in_sentence"])
-    sentences = pd.DataFrame(columns=["FORM", "TAG"] )
-    print(f"There are {len(copy_df['sentence_index'].unique())} sentences in the dataset")
-    for i in tqdm(range(copy_df["sentence_index"].max())):
-        form_tag_pairs = copy_df[copy_df["sentence_index"]==i][["sentence_index", "position_number_in_sentence", "FORM", "CONLL:NER"]]
-
-        if (len(form_tag_pairs) > 0):
-            row = {
-                    "FORM": form_tag_pairs["FORM"].tolist(),
-                    "TAG": form_tag_pairs["CONLL:NER"].tolist(),
-                }
-            row = pd.Series(row)
-            sentences.loc[len(sentences)] = row
-            #sentences.append({"FORM": form_tag_pairs["FORM"].tolist(),"TAG": form_tag_pairs["CONLL:NER"].tolist()})
-        
-    return sentences
-
 def get_sentences(df: pd.DataFrame):
     copy_df = df.copy()
     copy_df = copy_df.sort_values(["sentence_index", "position_number_in_sentence"])
     sentences = []
-    print(f'Max sentence index: {copy_df["sentence_index"].max()}')
     for i in range(copy_df["sentence_index"].max()):
         form_tag_pairs = copy_df[copy_df["sentence_index"]==i][["position_number_in_sentence", "FORM", "CONLL:NER"]]
         if (len(form_tag_pairs) > 0):
@@ -98,7 +77,6 @@ class NERDatasetFromSentenceDF(torch.utils.data.Dataset):
         
         self.original_df_size = original_df_size
         self.augmention_factor = augmention_factor
-        print("aug_size", (len(sentences_df) - original_df_size) / augmention_factor)
         self.augmented_size = int((len(sentences_df) - original_df_size) / augmention_factor)
         self.augmented_df = sentences_df
         self.sentences = sentences_df[0:original_df_size+self.augmented_size].copy()
@@ -135,7 +113,7 @@ def get_dfs():
     for data_set in train_devel_test_dirs:
         dfs[data_set] = pd.DataFrame()
         for genre_dir in train_devel_test_dirs[data_set]:
-            print(genre_dir)
+            print(f"Loading: {genre_dir}")
             genre = genre_dir.split(os.path.sep)[-2]
             df = load_all_csv_files_in_dir(genre_dir, data_set, genre, True)
             if "sentence_index" in dfs[data_set]:
