@@ -190,7 +190,7 @@ def train_loop(model, train_df, devel_df, test_df, writer, labels_to_ids):
    
     for epoch in range(epoch_num):
         model.train()
-        for tokenized_sentence, labels in tqdm(train_dataloader):
+        for tokenized_sentence, labels in tqdm(train_dataloader, desc=f"Epoch {epoch + 1}"):
             train_labels: torch.Tensor = labels.to(device)
             attention_mask = tokenized_sentence['attention_mask'].squeeze(1).to(device)
             input_ids = tokenized_sentence['input_ids'].squeeze(1).to(device)
@@ -204,21 +204,21 @@ def train_loop(model, train_df, devel_df, test_df, writer, labels_to_ids):
             optimizer.step()
         
         model.eval()
-        train_accuracy, total_matches_train = get_accuracy_on_dataset(model, train_dataloader, device)
-        devel_accuracy, total_matches_devel = get_accuracy_on_dataset(model, devel_dataloader, device)
+        train_accuracy, total_matches_train = get_accuracy_on_dataset(model, train_dataloader, device, "train")
+        devel_accuracy, total_matches_devel = get_accuracy_on_dataset(model, devel_dataloader, device, "devel")
         print(f"Epoch: {epoch+1} Train Accuracy: {train_accuracy * 100:.2f}% Devel Accuracy: {devel_accuracy*100:.2f}%")
         print(f"Train matches: Got {total_matches_train} matches out of {len(train_df)}")
         print(f"Devel matches: Got {total_matches_devel} matches out of {len(devel_df)}")
 
         writer.add_scalar("Accuracy/train", train_accuracy, epoch)
         writer.add_scalar("Accuracy/devel", devel_accuracy, epoch)
-        save_model(model, f"epoch_{epoch}_val_acc_{devel_accuracy:.2f}_train_acc_{train_accuracy:.2f}.pt")
+        save_model(model, f"epoch_{epoch + 1}_val_acc_{devel_accuracy:.2f}_train_acc_{train_accuracy:.2f}.pt")
 
-def get_accuracy_on_dataset(model: NERModel, dataset_loader: DataLoader, device):
+def get_accuracy_on_dataset(model: NERModel, dataset_loader: DataLoader, device, dataset_name):
   model.eval()
   total_matches = 0
   total_tokens = 0
-  for tokenized_sentence, label in dataset_loader:
+  for tokenized_sentence, label in tqdm(dataset_loader, desc=f"Evaluating model on {dataset_name}"):
     labels: torch.Tensor = label.to(device)
     attention_mask = tokenized_sentence['attention_mask'].squeeze(1).to(device)
     input_ids = tokenized_sentence['input_ids'].squeeze(1).to(device)
