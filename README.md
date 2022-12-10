@@ -32,12 +32,12 @@ The data directory holds all the data for training and validation. The model wil
 - `training.py` is the script for the model training.
 
 # Running the project 🏃‍♂️
-## Intalling the enviroment
-You can install the python environment for this project by running the `pip3 --no-cache-dir install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cu116` in the project's root directory
+## Installing the enviroment
+You can install the python environment for this project by running the `pip3 --no-cache-dir install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cu116` command in the project's root directory
 ## Running the jupyter notebooks
-You can simply run the project connected to each milestone by clicking on the corresponding badge on the top of this README file or if it suits you better you can open the .ipybn files here on github and click the badge there. 
+You can simply run the jupyter notebook connected to each milestone by clicking on the corresponding badge on the top of this README file or if it suits you better you can open the `.ipybn` files here on github and click the badge there. 
 
-Of course you are also welcome to clone the repo and run the ipynb files locally with jupyter notebook.
+Of course you are also welcome to clone the repo and run the `.ipynb` files locally with jupyter notebook.
 
 ## Training
 You can train our model by running the `python training.py` command in the project's root directory.
@@ -46,7 +46,7 @@ This script will save the trained model each epoch.
 You can follow the training on the command line and on tensorboard by running `tensorboard --logdir runs` command in the project's root directory. 
 
 ## Evaluation
-You can evaulate the model by using the `python evaluation.py <model_name>[<evaluation_dataset>]` command where `model_name` is the name of the PyTorch `.pt` model file in the `models` directory and `evaluation_dataset` is the dataset on which you want to evaulate the model, possible values are: `train` for the training dataset, `devel` for the validation dataset and `test` for the test dataset. The default value for `evaluation_dataset` is `test`.
+You can evaulate the model by using the `python evaluation.py <model_name>[<evaluation_dataset>]` command where `model_name` is the full name of the PyTorch `.pt` model file in the `models` directory and `evaluation_dataset` is the dataset on which you want to evaulate the model, possible values are: `train` for the training dataset, `devel` for the validation dataset and `test` for the test dataset. The default value for `evaluation_dataset` is `test`.
 Example:
 You want to evaluate the `first_model.pt` on the `test` dataset: `python evaluation.py first_model.pt test`
 
